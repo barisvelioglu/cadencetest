@@ -9,9 +9,9 @@ import (
 	"go.uber.org/zap"
 )
 
-//cadence --address 10.106.130.55:7933 --do SimpleDomain workflow run --tl simpleworker --wt main.SimpleWorkflow --et 60 -i '{"foo": "bar", "bar": 6161616161}'
+//cadence --address 10.106.130.55:7933 --do SimpleDomain workflow run --tl simpleworker --wt main.InstanceProcessWorkflow --et 60 -i '{"foo": "bar", "bar": 6161616161}'
 
-func SimpleWorkflow(ctx workflow.Context, input *SimleWorkflowInput) error {
+func InstanceProcessWorkflow(ctx workflow.Context, input *InstanceProcessWorkflowInput) error {
 	ao := workflow.ActivityOptions{
 		TaskList:               "simpleworker",
 		ScheduleToCloseTimeout: time.Second * 60,
@@ -22,13 +22,13 @@ func SimpleWorkflow(ctx workflow.Context, input *SimleWorkflowInput) error {
 	}
 	ctx = workflow.WithActivityOptions(ctx, ao)
 
-	future := workflow.ExecuteActivity(ctx, "SimpleActivity", input.Foo)
+	future := workflow.ExecuteActivity(ctx, "InstanceProcessSimpleActivity", input.Foo)
 	var result string
 	if err := future.Get(ctx, &result); err != nil {
 		return err
 	}
 
-	future2 := workflow.ExecuteActivity(ctx, "SimpleActivity2", input.Bar)
+	future2 := workflow.ExecuteActivity(ctx, "InstanceProcessDifficultActivity", input.Bar)
 	var result2 string
 	if err := future2.Get(ctx, &result2); err != nil {
 		return err
@@ -39,32 +39,23 @@ func SimpleWorkflow(ctx workflow.Context, input *SimleWorkflowInput) error {
 	return nil
 }
 
-type SimleWorkflowInput struct {
+type InstanceProcessWorkflowInput struct {
 	Foo string `json:"foo"`
 	Bar int    `json:"bar"`
 }
 
 // SimpleActivity is a sample Cadence activity function that takes one parameter and
 // returns a string containing the parameter value.
-func SimpleActivity(ctx context.Context, value string) (string, error) {
+func InstanceProcessSimpleActivity(ctx context.Context, value string) (string, error) {
 
 	activity.GetLogger(ctx).Info("SimpleActivity called.", zap.String("Value", value))
 
 	return "Processed: " + string(value), nil
 }
 
-func SimpleActivity2(ctx context.Context, value int) (string, error) {
+func InstanceProcessDifficultActivity(ctx context.Context, value int) (string, error) {
 
 	activity.GetLogger(ctx).Info("SimpleActivity2 called.", zap.Int("Value", value))
 
 	return "Processed: " + string(value), nil
 }
-
-//FlowScheduledWorkflow
-
-// ComplexInstanceChildWorkflow
-//==> InstanceWorkflow
-//==> InstanceWorkflow
-
-// InstanceWorkflow
-// InputWorkflow

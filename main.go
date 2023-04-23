@@ -33,10 +33,19 @@ func main() {
 
 	natsConnection = nc
 
-	workflow.Register(SimpleWorkflow)
-	activity.RegisterWithOptions(SimpleActivity, activity.RegisterOptions{Name: "SimpleActivity"})
-	activity.RegisterWithOptions(SimpleActivity2, activity.RegisterOptions{Name: "SimpleActivity2"})
-	workflow.Register(Aileflow)
+	workflow.Register(InputProcessWorkflow)
+	activity.RegisterWithOptions(InputProcessSimpleActivity, activity.RegisterOptions{Name: "InputProcessSimpleActivity"})
+	activity.RegisterWithOptions(InputProcessDifficultActivity, activity.RegisterOptions{Name: "InputProcessDifficultActivity"})
+
+	workflow.Register(InstanceProcessWorkflow)
+	activity.RegisterWithOptions(InstanceProcessSimpleActivity, activity.RegisterOptions{Name: "InstanceProcessSimpleActivity"})
+	activity.RegisterWithOptions(InstanceProcessDifficultActivity, activity.RegisterOptions{Name: "InstanceProcessDifficultActivity"})
+
+	workflow.Register(ComplexInstanceProcessWorkflow)
+	activity.RegisterWithOptions(ComplexInstanceProcessSimpleActivity, activity.RegisterOptions{Name: "ComplexInstanceProcessSimpleActivity"})
+	activity.RegisterWithOptions(ComplexInstanceProcessDifficultActivity, activity.RegisterOptions{Name: "ComplexInstanceProcessDifficultActivity"})
+
+	workflow.Register(FlowScheduledWorkflow)
 
 	go startWorker(buildLogger(), buildCadenceClient())
 	//go startWorker2(buildLogger(), buildCadenceClient())
