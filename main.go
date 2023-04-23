@@ -42,8 +42,8 @@ func main() {
 	activity.RegisterWithOptions(InstanceProcessDifficultActivity, activity.RegisterOptions{Name: "InstanceProcessDifficultActivity"})
 
 	workflow.Register(ComplexInstanceProcessWorkflow)
-	activity.RegisterWithOptions(ComplexInstanceProcessSimpleActivity, activity.RegisterOptions{Name: "ComplexInstanceProcessSimpleActivity"})
-	activity.RegisterWithOptions(ComplexInstanceProcessDifficultActivity, activity.RegisterOptions{Name: "ComplexInstanceProcessDifficultActivity"})
+	activity.RegisterWithOptions(ComplexInstanceProcessInputActivity, activity.RegisterOptions{Name: "ComplexInstanceProcessInputActivity"})
+	activity.RegisterWithOptions(ComplexInstanceProcessOutputActivity, activity.RegisterOptions{Name: "ComplexInstanceProcessOutputActivity"})
 
 	workflow.Register(FlowScheduledWorkflow)
 
