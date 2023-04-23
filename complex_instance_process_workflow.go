@@ -69,16 +69,16 @@ type ComplexInstanceProcessWorkflowInput struct {
 
 // SimpleActivity is a sample Cadence activity function that takes one parameter and
 // returns a string containing the parameter value.
-func ComplexInstanceProcessSimpleActivity(ctx context.Context, value Instance) (string, error) {
+func ComplexInstanceProcessInputActivity(ctx context.Context, value Instance) (string, error) {
 
-	activity.GetLogger(ctx).Info("ComplexInstanceProcessSimpleActivity called.", zap.String("Value", value.Name))
+	activity.GetLogger(ctx).Info("ComplexInstanceProcessInputActivity called.", zap.String("Value", value.Name))
 
 	return "Processed: " + value.Name, nil
 }
 
-func ComplexInstanceProcessDifficultActivity(ctx context.Context, value string) (string, error) {
+func ComplexInstanceProcessOutputActivity(ctx context.Context, value string) (string, error) {
 
-	activity.GetLogger(ctx).Info("ComplexInstanceProcessDifficultActivity called.", zap.String("Value", value))
+	activity.GetLogger(ctx).Info("ComplexInstanceProcessOutputActivity called.", zap.String("Value", value))
 
 	return "Processed 61: " + value, nil
 }
