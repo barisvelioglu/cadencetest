@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"time"
 
 	"go.uber.org/cadence/activity"
@@ -25,7 +26,7 @@ func ComplexInstanceProcessWorkflow(ctx workflow.Context, input *ComplexInstance
 	// Use a workflow.Group to execute all activities in parallel
 	waitGroup := workflow.NewWaitGroup(ctx)
 	for _, instance := range input.Instances {
-		activityName := "ComplexInstanceProcessSimpleActivity"
+		activityName := "ComplexInstanceProcessInputActivityNats"
 		activityArgs := instance
 		workflow.Go(ctx, func(ctx workflow.Context) {
 
@@ -45,7 +46,7 @@ func ComplexInstanceProcessWorkflow(ctx workflow.Context, input *ComplexInstance
 	workflow.GetLogger(ctx).Info("All activities completed")
 
 	// Execute the remaining activity
-	future2 := workflow.ExecuteActivity(ctx, "ComplexInstanceProcessDifficultActivity", input.Foo)
+	future2 := workflow.ExecuteActivity(ctx, "ComplexInstanceProcessOutputActivity", input.Foo)
 	var result2 string
 	if err := future2.Get(ctx, &result2); err != nil {
 		return "", err
@@ -74,6 +75,30 @@ func ComplexInstanceProcessInputActivity(ctx context.Context, value Instance) (s
 	activity.GetLogger(ctx).Info("ComplexInstanceProcessInputActivity called.", zap.String("Value", value.Name))
 
 	return "Processed: " + value.Name, nil
+}
+
+// SimpleActivity is a sample Cadence activity function that takes one parameter and
+// returns a string containing the parameter value.
+func ComplexInstanceProcessInputActivityNats(ctx context.Context, value Instance) (string, error) {
+
+	msg, err := json.Marshal(value)
+	if err != nil {
+		return "", err
+	}
+
+	reply, err := natsConnection.Request("ComplexInstanceProcessInputActivityNats", msg, time.Second*60)
+	if err != nil {
+		return "", err
+	}
+
+	var result string
+	if err := json.Unmarshal(reply.Data, &result); err != nil {
+		return "", err
+	}
+
+	activity.GetLogger(ctx).Info("ComplexInstanceProcessInputActivityNats called.", zap.String("Value", result))
+
+	return "Processed: " + result, nil
 }
 
 func ComplexInstanceProcessOutputActivity(ctx context.Context, value string) (string, error) {

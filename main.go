@@ -1,6 +1,9 @@
 package main
 
 import (
+	"context"
+	"encoding/json"
+	"fmt"
 	"log"
 
 	"go.uber.org/cadence/.gen/go/cadence/workflowserviceclient"
@@ -44,8 +47,14 @@ func main() {
 	workflow.Register(ComplexInstanceProcessWorkflow)
 	activity.RegisterWithOptions(ComplexInstanceProcessInputActivity, activity.RegisterOptions{Name: "ComplexInstanceProcessInputActivity"})
 	activity.RegisterWithOptions(ComplexInstanceProcessOutputActivity, activity.RegisterOptions{Name: "ComplexInstanceProcessOutputActivity"})
+	activity.RegisterWithOptions(ComplexInstanceProcessInputActivityNats, activity.RegisterOptions{Name: "ComplexInstanceProcessInputActivityNats"})
 
 	workflow.Register(FlowScheduledWorkflow)
+
+	// Subscribe to the "ComplexInstanceProcessSimpleActivity" subject
+	_, err = nc.Subscribe("ComplexInstanceProcessSimpleActivity", func(m *nats.Msg) {
+		handleNatsActivityMessage(m, ComplexInstanceProcessInputActivity)
+	})
 
 	go startWorker(buildLogger(), buildCadenceClient())
 	//go startWorker2(buildLogger(), buildCadenceClient())
@@ -82,6 +91,26 @@ func buildCadenceClient() workflowserviceclient.Interface {
 	}
 
 	return workflowserviceclient.New(dispatcher.ClientConfig(CadenceService))
+}
+
+func handleNatsActivityMessage(m *nats.Msg, activityFunc func(context.Context, Instance) (string, error)) {
+	var input Instance
+	if err := json.Unmarshal(m.Data, &input); err != nil {
+		return
+	}
+	ctx := context.Background()
+	result, err := activityFunc(ctx, input)
+	if err != nil {
+		return
+	}
+	fmt.Printf("Activity completed: %s\n", result)
+
+	// Send the result back as a reply
+	replyData, err := json.Marshal(result)
+	if err != nil {
+		return
+	}
+	m.Respond(replyData)
 }
 
 func startWorker(logger *zap.Logger, service workflowserviceclient.Interface) {
