@@ -22,26 +22,38 @@ func ComplexInstanceProcessWorkflow(ctx workflow.Context, input *ComplexInstance
 	}
 	ctx = workflow.WithActivityOptions(ctx, ao)
 
-	var result string
-	for i := 0; i < len(input.Instances); i++ {
-		future := workflow.ExecuteActivity(ctx, "ComplexInstanceProcessSimpleActivity", input.Instances[i])
-		var value string
-		if err := future.Get(ctx, &value); err != nil {
-			return "", err
-		}
+	// Use a workflow.Group to execute all activities in parallel
+	waitGroup := workflow.NewWaitGroup(ctx)
+	for _, instance := range input.Instances {
+		activityName := "ComplexInstanceProcessSimpleActivity"
+		activityArgs := instance
+		workflow.Go(ctx, func(ctx workflow.Context) {
 
-		result += " " + value
+			// Execute each activity in its own coroutine
+			future := workflow.ExecuteActivity(ctx, activityName, activityArgs)
+			var value string
+			if err := future.Get(ctx, &value); err != nil {
+				return
+			}
+			workflow.GetLogger(ctx).Info("Activity completed", zap.String("value", value))
+		})
 	}
 
-	// future2 := workflow.ExecuteActivity(ctx, "ComplexInstanceProcessDifficultActivity", input.Bar)
-	// var result2 string
-	// if err := future2.Get(ctx, &result2); err != nil {
-	// 	return err
-	// }
+	// Wait for all activities to complete
+	waitGroup.Wait(ctx)
 
-	workflow.GetLogger(ctx).Info("Done", zap.String("result", result))
+	workflow.GetLogger(ctx).Info("All activities completed")
 
-	return result, nil
+	// Execute the remaining activity
+	future2 := workflow.ExecuteActivity(ctx, "ComplexInstanceProcessDifficultActivity", input.Foo)
+	var result2 string
+	if err := future2.Get(ctx, &result2); err != nil {
+		return "", err
+	}
+
+	workflow.GetLogger(ctx).Info("Done", zap.String("result", result2))
+
+	return result2, nil
 }
 
 type Instance struct {
@@ -64,9 +76,9 @@ func ComplexInstanceProcessSimpleActivity(ctx context.Context, value Instance) (
 	return "Processed: " + value.Name, nil
 }
 
-func ComplexInstanceProcessDifficultActivity(ctx context.Context, value int) (string, error) {
+func ComplexInstanceProcessDifficultActivity(ctx context.Context, value string) (string, error) {
 
-	activity.GetLogger(ctx).Info("ComplexInstanceProcessDifficultActivity called.", zap.Int("Value", value))
+	activity.GetLogger(ctx).Info("ComplexInstanceProcessDifficultActivity called.", zap.String("Value", value))
 
-	return "Processed: " + string(value), nil
+	return "Processed 61: " + value, nil
 }
