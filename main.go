@@ -93,6 +93,7 @@ func buildCadenceClient() workflowserviceclient.Interface {
 	return workflowserviceclient.New(dispatcher.ClientConfig(CadenceService))
 }
 
+// API gibi yani
 func handleNatsActivityMessage(m *nats.Msg, activityFunc func(context.Context, Instance) (string, error)) {
 	var input Instance
 	if err := json.Unmarshal(m.Data, &input); err != nil {

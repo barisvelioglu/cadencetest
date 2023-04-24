@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"time"
 
+	"go.uber.org/cadence"
 	"go.uber.org/cadence/activity"
 	"go.uber.org/cadence/workflow"
 	"go.uber.org/zap"
@@ -20,6 +21,12 @@ func ComplexInstanceProcessWorkflow(ctx workflow.Context, input *ComplexInstance
 		StartToCloseTimeout:    time.Second * 60,
 		HeartbeatTimeout:       time.Second * 30,
 		WaitForCancellation:    false,
+		RetryPolicy: &cadence.RetryPolicy{
+			InitialInterval:    time.Second * 1,
+			BackoffCoefficient: 2,
+			MaximumInterval:    time.Second * 10,
+			MaximumAttempts:    5,
+		},
 	}
 	ctx = workflow.WithActivityOptions(ctx, ao)
 
