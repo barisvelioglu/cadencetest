@@ -65,6 +65,18 @@ func FlowScheduledWorkflow(ctx workflow.Context, input FlowScheduledWorkflowInpu
 				ID:   "12345678",
 				Name: "Instance6",
 			},
+			{
+				ID:   "12345678",
+				Name: "Instance7",
+			},
+			{
+				ID:   "12345678",
+				Name: "Instance8",
+			},
+			{
+				ID:   "12345678",
+				Name: "Instance9",
+			},
 		},
 	}).Get(ctx, &childFlowResult)
 	if err != nil {

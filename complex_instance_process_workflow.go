@@ -32,25 +32,27 @@ func ComplexInstanceProcessWorkflow(ctx workflow.Context, input *ComplexInstance
 
 	// Use a workflow.Group to execute all activities in parallel
 	waitGroup := workflow.NewWaitGroup(ctx)
+	waitGroup.Add(len(input.Instances))
+	var response string
 	for _, instance := range input.Instances {
 		activityName := "ComplexInstanceProcessInputActivityNats"
 		activityArgs := instance
 		workflow.Go(ctx, func(ctx workflow.Context) {
-
+			defer waitGroup.Done()
 			// Execute each activity in its own coroutine
 			future := workflow.ExecuteActivity(ctx, activityName, activityArgs)
 			var value string
 			if err := future.Get(ctx, &value); err != nil {
 				return
 			}
+
+			response = response + " " + value
 			workflow.GetLogger(ctx).Info("Activity completed", zap.String("value", value))
 		})
 	}
 
 	// Wait for all activities to complete
 	waitGroup.Wait(ctx)
-
-	workflow.GetLogger(ctx).Info("All activities completed")
 
 	// Execute the remaining activity
 	future2 := workflow.ExecuteActivity(ctx, "ComplexInstanceProcessOutputActivity", input.Foo)
@@ -59,9 +61,11 @@ func ComplexInstanceProcessWorkflow(ctx workflow.Context, input *ComplexInstance
 		return "", err
 	}
 
-	workflow.GetLogger(ctx).Info("Done", zap.String("result", result2))
+	workflow.GetLogger(ctx).Info("All activities completed")
 
-	return result2, nil
+	workflow.GetLogger(ctx).Info("Done", zap.String("result", response))
+
+	return response, nil
 }
 
 type Instance struct {

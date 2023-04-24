@@ -52,8 +52,8 @@ func main() {
 	workflow.Register(FlowScheduledWorkflow)
 
 	// Subscribe to the "ComplexInstanceProcessSimpleActivity" subject
-	_, err = nc.Subscribe("ComplexInstanceProcessSimpleActivity", func(m *nats.Msg) {
-		handleNatsActivityMessage(m, ComplexInstanceProcessInputActivity)
+	_, err = nc.QueueSubscribe("ComplexInstanceProcessInputActivityNats", "uns-manager", func(m *nats.Msg) {
+		handleNatsActivityMessage(m, ComplexInstanceProcessInputActivityNats)
 	})
 
 	go startWorker(buildLogger(), buildCadenceClient())
@@ -99,15 +99,11 @@ func handleNatsActivityMessage(m *nats.Msg, activityFunc func(context.Context, I
 	if err := json.Unmarshal(m.Data, &input); err != nil {
 		return
 	}
-	ctx := context.Background()
-	result, err := activityFunc(ctx, input)
-	if err != nil {
-		return
-	}
-	fmt.Printf("Activity completed: %s\n", result)
+
+	fmt.Printf("Activity completed: %s\n", input.Name)
 
 	// Send the result back as a reply
-	replyData, err := json.Marshal(result)
+	replyData, err := json.Marshal(input.Name)
 	if err != nil {
 		return
 	}
